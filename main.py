@@ -1,7 +1,7 @@
 import asyncio
 
 from ballDetection import ballDetection
-
+# pip install -qr https://raw.githubusercontent.com/ultralytics/yolov5/master/requirements.txt
 async def getNearestBall():
     bd = ballDetection(False, 0)
     bd.start()
