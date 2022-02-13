@@ -1,15 +1,24 @@
 import asyncio
 
-from ballDetection import ballDetection
+from ballDetection2 import ballDetection2
 # pip install -qr https://raw.githubusercontent.com/ultralytics/yolov5/master/requirements.txt
-async def getNearestBall():
-    bd = ballDetection(False, 0)
+import warnings
+
+warnings.filterwarnings("ignore")
+
+async def getNearestBall(speed = 1):
+    # first argument is either False or an array of integers corresponding to coco classes
+    bd = ballDetection2(False, 0)
     bd.start()
     while(1):
-        location = None
-        location = bd.nearestBallX
-        print(location)
-        await asyncio.sleep(1)
+        detections = None
+        if (bd.has_detection):
+            detections = bd.last_detection
+            # type = 0 - ping pong ,type = 1 - tennis
+            print(detections)
+        else:
+            print("no Objects detected")
+        await asyncio.sleep(speed)
 
 asyncio.run(getNearestBall())
 

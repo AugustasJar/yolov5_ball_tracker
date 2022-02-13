@@ -39,6 +39,7 @@ class ballDetection():
             results = results.xyxy
             results = results[0].values
             tempNearestBall = self.nearestBallX
+            self.ballDetected = False
             for result in results:
                 x1,y1,x2,y2,confidence,index,class_name = result
                 x1 = int(x1)
@@ -48,13 +49,13 @@ class ballDetection():
                 middle_point_x = int((x1+x2)/2)
                 middle_point_y = int((y1+y2)/2)
                 middle_point = (middle_point_x,middle_point_y)
-
-                if (tempNearestBall > middle_point_x):
-                    tempNearestBall = middle_point_x
+                if (class_name == "sports ball"):
+                    if (tempNearestBall > middle_point_x):
+                        tempNearestBall = middle_point_x
                 frame = cv2.rectangle(frame,(x1,y1),(x2,y2),(0,0,255),1)
 
                 frame = cv2.putText(frame,class_name + str(round(confidence,2)),(x1,y1-10),self.font,1,(255,255,255),1)
-            self.nearestBallX = tempNearestBall
+            self.nearestBallX = tempNearestBall/width
             self.currrent_frame = frame
             self.currrent_frame = frame
 
