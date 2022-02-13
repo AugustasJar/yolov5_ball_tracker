@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore")
 
 async def getNearestBall(speed = 1):
     # first argument is either False or an array of integers corresponding to coco classes
-    bd = ballDetection2(False, 0)
+    bd = ballDetection2([37], 0)
     bd.start()
     while(1):
         detections = None

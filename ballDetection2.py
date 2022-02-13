@@ -12,7 +12,6 @@ class ballDetection2():
         #classes parameter takes an array of integers representing coco classes
         self.classes = classes
         self.model = torch.hub.load('ultralytics/yolov5', 'yolov5n', pretrained=True)
-
         self.vs = VideoStream(camera)
         self.vs.start()
         # model parameters
@@ -20,7 +19,7 @@ class ballDetection2():
         self.model.iou = 0.45  # NMS IoU threshold
         self.model.agnostic = False  # NMS class-agnostic
         self.model.multi_label = False  # NMS multiple labels per box
-        # self.model.classes = classes  # (optional list) filter by class, i.e. = [0, 15, 16] for COCO persons, cats and dogs
+        self.model.classes = classes  # (optional list) filter by class, i.e. = [0, 15, 16] for COCO persons, cats and dogs
         # self.model.max_det = 10  # maximum number of detections per image
         self.model.amp = False  # Automatic Mixed Precision (AMP) inference
 
@@ -41,7 +40,7 @@ class ballDetection2():
 
     def _capture(self):
         while not self.stopped:
-
+            start = time.time()
             self.current_frame = self.vs.read()
             image = resize(self.current_frame,width = self.image_width)
             width,height,_ = image.shape
@@ -75,7 +74,8 @@ class ballDetection2():
                     self.last_detection = current_last_detection
                 else:
                     self.has_detection = False
-
+            end = time.time()
+            print("excecution time: ", end-start)
             cv2.imshow("Frame", image)
             key = cv2.waitKey(10) & 0xFF
             if key == ord("q"):
