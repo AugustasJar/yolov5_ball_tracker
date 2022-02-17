@@ -9,7 +9,8 @@ warnings.filterwarnings("ignore")
 
 async def getNearestBall(speed=1):
     # first argument is either False or an array of integers corresponding to coco classes
-    bd = ballDetection2([37], 0)
+    #37 is for sports balls :)
+    bd = ballDetection2(False, 0)
     bd.start()
     motor_input = 0
     y = 9999
@@ -20,11 +21,11 @@ async def getNearestBall(speed=1):
             detections = bd.last_detection
             # type = 0 - ping pong ,type = 1 - tennis
             for detection in detections:
+                interim = detection[0]
                 if (detection[1] < y):
                     y = detection[1]
                     x = detection[0]
             x = (x + 0.5)*20
-
             print(detections)
         else:
             print("no Objects detected")

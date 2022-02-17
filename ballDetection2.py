@@ -50,7 +50,7 @@ class ballDetection2():
             results = results.xyxy
             results = results[0].values
 
-            current_last_detection = np.array([])
+            current_last_detection = []
             if results is not None:
                 for result in results:
                     x1, y1, x2, y2, confidence, index, class_name = result
@@ -64,12 +64,12 @@ class ballDetection2():
                     middle_point = (middle_point_x, middle_point_y)
                     middle_point_normalized = (middle_point_x/width,middle_point_y/height)
                     type = self.determineBallType(middle_point, x2 - middle_point_x)
-                    current_last_detection = np.append(current_last_detection,[middle_point_normalized,type])
+                    current_last_detection.append(middle_point_normalized)
 
                     image = cv2.rectangle(image,(x1,y1),(x2,y2),(0,0,255),1)
                     image = cv2.putText(image,class_name + str(round(confidence,2)),(x1,y1-10),self.font,1,(255,255,255),1)
 
-                if (len(current_last_detection) > 0):
+                if (current_last_detection):
                     self.has_detection = True
                     self.last_detection = current_last_detection
                 else:
