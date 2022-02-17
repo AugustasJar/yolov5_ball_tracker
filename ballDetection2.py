@@ -6,14 +6,15 @@ from imutils.video import VideoStream
 import time
 from threading import Thread
 
-
 class ballDetection2():
     def __init__(self,classes,camera):
+
         #classes parameter takes an array of integers representing coco classes
         self.classes = classes
         self.model = torch.hub.load('ultralytics/yolov5', 'yolov5n', pretrained=True)
         self.vs = VideoStream(camera)
         self.vs.start()
+
         # model parameters
         self.model.conf = 0.25  # NMS confidence threshold
         self.model.iou = 0.45  # NMS IoU threshold
@@ -49,7 +50,6 @@ class ballDetection2():
             results = results.xyxy
             results = results[0].values
 
-            current_Nearest_object = None
             current_last_detection = np.array([])
             if results is not None:
                 for result in results:
@@ -84,6 +84,7 @@ class ballDetection2():
 
 
     def determineBallType(self,middle_point,r):
+
         avg_colour = np.array([0,0,0])
         half_radius = int(r/2)
         hsv_frame = cv2.cvtColor(self.current_frame,cv2.COLOR_BGR2HSV)
