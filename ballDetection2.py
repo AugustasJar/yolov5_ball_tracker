@@ -1,10 +1,12 @@
+import time
+from threading import Thread
+
 import cv2
 import numpy as np
 import torch
 from imutils import resize
 from imutils.video import VideoStream
-import time
-from threading import Thread
+
 
 class ballDetection2():
     def __init__(self,classes,camera):

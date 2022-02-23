@@ -1,0 +1,61 @@
+1.
+
+Default behavior – idle speed forward – search for a ball
+
+
+
+Search behavior:
+
+turn clockwise if wall is hit, go anti-clockwise.
+
+If a full rotation is completed extend the search radius by increasing idle speed (?)
+
+
+
+
+
+
+
+Ball found: speed = max, turn towards, pdi control
+
+Set speed to max
+
+If error is positive, decrease left motor speed
+
+If error is negative, decrease right motor speed
+
+When ball is close execute a function (getBall()) to drive forward and trigger the paddle
+
+
+
+GetBall():
+
+Count the balls in immediate path
+
+If a wall is detected while getting a ball – abort, turn 90 degrees continue default behavior with turn direction opposite to the found ball
+
+Go forward for x seconds,
+
+If it's successfully completed increment balls to calculate remaining space.
+
+
+
+Capacity_full = True or out_of_time = True:
+
+Park()
+
+If not out_of_time - Wait for last 10 seconds or something
+
+Open the back door
+
+
+
+Park():
+
+Turn until our qr code is seen
+
+Get close to nnearest wall ?
+
+Turn to qr code ( back camera)
+
+Go to qr code

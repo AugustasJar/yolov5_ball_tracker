@@ -1,15 +1,15 @@
 import asyncio
-
-from ballDetection2 import ballDetection2
 # pip install -qr https://raw.githubusercontent.com/ultralytics/yolov5/master/requirements.txt
 import warnings
+
+from ballDetection2 import ballDetection2
 
 warnings.filterwarnings("ignore")
 
 
 async def getNearestBall(speed=1):
     # first argument is either False or an array of integers corresponding to coco classes
-    #37 is for sports balls :)
+    # 37 is for sports balls :)
     bd = ballDetection2(False, 0)
     bd.start()
     motor_input = 0
@@ -25,7 +25,7 @@ async def getNearestBall(speed=1):
                 if (detection[1] < y):
                     y = detection[1]
                     x = detection[0]
-            x = (x + 0.5)*20
+            x = (x + 0.5) * 20
             print(detections)
         else:
             print("no Objects detected")
@@ -33,7 +33,6 @@ async def getNearestBall(speed=1):
 
 
 asyncio.run(getNearestBall())
-
 
 # bd.singleShot('test.jpg')
 # bd.singleShot('test2.jpg')
