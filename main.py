@@ -17,16 +17,17 @@ async def getNearestBall(speed=1):
     x = None
     while (1):
         detections = None
+        current_x = None
         if (bd.has_detection):
             detections = bd.last_detection
             # type = 0 - ping pong ,type = 1 - tennis
             for detection in detections:
-                interim = detection[0]
                 if (detection[1] < y):
                     y = detection[1]
-                    x = detection[0]
-            x = (x + 0.5) * 20
-            print(detections)
+                    current_x = detection[0]
+                    current_x = (current_x - 0.5) * 20
+            if (current_x is not None):
+                print(current_x)
         else:
             print("no Objects detected")
         await asyncio.sleep(speed)

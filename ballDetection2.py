@@ -77,7 +77,7 @@ class ballDetection2():
                 else:
                     self.has_detection = False
             end = time.time()
-            print("excecution time: ", end-start)
+            # print("excecution time: ", end-start)
             cv2.imshow("Frame", image)
             key = cv2.waitKey(10) & 0xFF
             if key == ord("q"):
