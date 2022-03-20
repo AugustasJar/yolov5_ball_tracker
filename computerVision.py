@@ -9,6 +9,9 @@ import serial
 from threading import Thread
 from time import sleep
 
+import adafruit_bno055
+import board
+import re
 
 class computerVision:
 
@@ -19,103 +22,107 @@ class computerVision:
         self.minimum_countour_area = 300
         self.ranges = ranges
         self.gaussian_blur_kernel = (7, 7)
-        self.image_width = 300
+        self.image_width = 240
         self.Ki_memory = 5
         self.servo_angle = 20
         self.servo_limit = 0
         self.active = True
         self.I = 0
-        self.default_turn_left = Trueadafruit_bno055
+        self.default_turn_left = True
         self.collision_distance = 6
 
+
+        #TESTING
+        i2c = board.I2C()
+        self.sensor = adafruit_bno055.BNO055_I2C(i2c)
+        self.startingPosition = imu=int(float(re.sub('[()]', '', str(self.sensor.euler)).split(',')[0]))
+        #TESTING
         self.Kp = 10
         self.Ki = 0.1
         self.Kd = 0
         self.detections = []
         self.pastInputs = []
         self.s1 = Sensor('/dev/ttyACM0')
-        self.videoLoop()
+        
+        self.control_logic()
         
         
 
-    def start(self):adafruit_bno055
-        Thread(target=self.videoLoop(),args=()).start()
-        return self
+#    def start(self):
+#        Thread(target=self.videoLoop(),args=()).start()
+#        return self
 
 
-    def stop(self):
-        self.active = False
-
+#    def stop(self):
+#        self.active = False
+#
     def videoLoop(self):
-        while self.active:
-            # grab the current frame
-            frame = self.vs.read()
-            frame = cv2.resize(frame,(240,135))
-            if frame is None:
-                break
+        # grab the current frame
+        frame = self.vs.read()
+        frame = imutils.resize(frame, width=self.image_width)
+        mask = self.create_mask(frame, self.ranges)
 
-            frame = imutils.resize(frame, width=self.image_width)
-            mask = self.create_mask(frame, self.ranges)
+        cnts = self.findCountours(mask)
+        frame = self.displayDetection(frame, cnts)
+        self.addDetections(cnts)
+        #cv2.imshow("Frame", frame)
+        #key = cv2.waitKey(10) & 0xFF
+        if (len(self.detections) > 0):
+            y= 9999
+            for detection in self.detections:
+                if (detection[1] < y):
+                    y = detection[0]
+                    current_x = detection[0]/240
+                    current_y = detection[1]
+            if (current_x is not None):
+               # print(current_x/290)
 
-            cnts = self.findCountours(mask)
-            frame = self.displayDetection(frame, cnts)
-            self.addDetections(cnts)
-            cv2.imshow("Frame", frame)
-
-            if (len(self.detections) > 0):
-                y= 9999
-                for detection in self.detections:
-                    if (detection[1] < y):
-                        y = detection[0]
-                        current_x = detection[0]/290
-                if (current_x is not None):
-                   # print(current_x/290)
-
-                   if (len(self.pastInputs) < self.Ki_memory):
-                       self.pastInputs.insert(0, current_x)
-                   else:
-                       self.pastInputs.pop()
-                       self.pastInputs.insert(0, current_x)
-                    
-                   self.control_logic(True,current_x)
-            else:
-                self.control_logic(False,0)
-
-            key = cv2.waitKey(100) & 0xFF
-            if key == ord("q"):
-                break
-
-        self.vs.stop()
-        cv2.destroyAllWindows()
-
-    
-    def control_logic(self,detects_target, current_x):
-        #first checks if there is an obstacle:
-        sensor_array = self.s1.serialSensor()
-        print(sensor_array)
-        if self.collisionDetected(sensor_array):
-            #logic for driwing back and turning away? waiting perhaps
-            if sensor_array[0]:
-                self.setPWM(1)
-                time.sleep(1)
-                self.default_turn_left = not self.default_turn_left
-            elif sensor_array(1):
-                self.setPWM(0)
-                time.sleep(1)
-                self.default_turn_left = not self.default_turn_leftadafruit_bno055
-            elif sensor_array[2]:
-                #go backwards
-                print("going backwards")
+               if (len(self.pastInputs) < self.Ki_memory):
+                   self.pastInputs.insert(0, current_x)
+               else:
+                   self.pastInputs.pop()
+                   self.pastInputs.insert(0, current_x)
+                
+               return (current_x,current_y)
         else:
-            if not detects_target:
-                if self.default_turn_left:
-                    self.setPWM(0.75)
-                else:
-                    self.setPWM(0.75)
+            return None
+
+
+    def control_logic(self):
+        while self.active:
+            nearest_ball_position = self.videoLoop()
+            detects_target = False if nearest_ball_position == None else True
+            position = self.getPosition()
+            print(position)
+            #sensor_array = self.s1.serialSensor()
+            sensor_array = [111,111,111]
+            #print(sensor_array)
+            if self.collisionDetected(sensor_array):
+                #logic for driwing back and turning away? waiting perhaps
+                if sensor_array[0]:
+                    self.setPWM(1)
+                    time.sleep(1)
+                    self.default_turn_left = not self.default_turn_left
+                elif sensor_array(1):
+                    self.setPWM(0)
+                    time.sleep(1)
+                    self.default_turn_left = not self.default_turn_left
+                elif sensor_array[2]:
+                    #go backwards
+                    print("going backwards")
             else:
-                self.setPWM(current_x)
+                if not detects_target:
+                    if self.default_turn_left:
+                        self.setPWM(0.75)
+                    else:
+                        self.setPWM(0.75)
+                else:
+                    if (nearest_ball_position[1] > 100):
+                        self.setPWM(nearest_ball_position[0])
+                    else:
+                        print("grab ball")
             
-    def collisionDetected(self,sensor_array):adafruit_bno055adafruit_bno055
+    def collisionDetected(self,sensor_array):
         for value in sensor_array:
             if value == '':
                 continue
@@ -123,6 +130,12 @@ class computerVision:
                 return True
         return False
         
+    def getPosition(self):
+        try:
+            imu=int(float(re.sub('[()]', '', str(self.sensor.euler)).split(',')[0]))
+            return imu
+        except:
+            return None
         
     def setPWM(self,error):
         error -= 0.5
@@ -215,361 +228,9 @@ class Sensor:
     def __init__(self, portnum):
         self.portnum = portnum
         
-        self.expectedSetCount = 2
+        self.expectedSetCount = 0
         self.timeout = 5
-       from imutils.video import VideoStream
-2
-import numpy as np
-3
-import cv2 #pip install opencv-contrib-python
-4
-import imutils
-5
-import time
-6
-import math
-7
-from threading import Thread
-8
-​
-9
-class computerVision:
-10
-​
-11
-    def __init__(self, ranges):
-12
-        self.vs = VideoStream(0)
-13
-        self.vs.start()
-14
-        time.sleep(1.0)
-15
-        self.minimum_countour_area = 300
-16
-        self.ranges = ranges
-17
-        self.gaussian_blur_kernel = (7, 7)
-18
-        self.image_width = 300
-19
-        self.Ki_memory = 5
-20
-        self.servo_angle = 20
-21
-        self.servo_limit = 0
-22
-        self.active = True
-23
-        self.I = 0
-24
-​
-25
-        self.Kp = 10
-26
-        self.Ki = 0.1
-27
-        self.Kd = 0
-28
-        self.detections = []
-29
-        self.pastInputs = []
-30
-        self.videoLoop()
-31
-​
-32
-    def start(self):
-33
-        Thread(target=self.videoLoop(),args=()).start()
-34
-        return self
-35
-​from imutils.video import VideoStream
-2
-import numpy as np
-3
-import cv2 #pip install opencv-contrib-python
-4
-import imutils
-5
-import time
-6
-import math
-7
-from threading import Thread
-8from imutils.video import VideoStream
-2
-import numpy as np
-3
-import cv2 #pip install opencv-contrib-python
-4
-import imutils
-5
-import time
-6
-import math
-7
-from threading import Thread
-8
-​
-9
-class computerVision:
-10
-​
-11
-    def __init__(self, ranges):
-12
-        self.vs = VideoStream(0)
-13
-        self.vs.start()
-14
-        time.sleep(1.0)
-15
-        self.minimum_countour_area = 300
-16
-        self.ranges = ranges
-17
-        self.gaussian_blur_kernel = (7, 7)
-18
-        self.image_width = 300
-19
-        self.Ki_memory = 5
-20
-        self.servo_angle = 20
-21
-        self.servo_limit = 0
-22
-        self.active = True
-23
-        self.I = 0
-24
-​
-25
-        self.Kp = 10
-26
-        self.Ki = 0.1
-27
-        self.Kd = 0
-28
-        self.detections = []
-29
-        self.pastInputs = []
-30
-        self.videoLoop()
-31
-​
-32
-    def start(self):
-33
-        Thread(target=self.videoLoop(),args=()).start()
-34
-        return self
-35
-​
-36from imutils.video import VideoStream
-2
-import numpy as np
-3
-import cv2 #pip install opencv-contrib-python
-4
-import imutils
-5
-import time
-6
-import math
-7
-from threading import Thread
-8
-​
-9
-class computerVision:
-10
-​
-11
-    def __init__(self, ranges):
-12
-        self.vs = VideoStream(0)
-13
-        self.vs.start()
-14
-        time.sleep(1.0)
-15
-        self.minimum_countour_area = 300
-16
-        self.ranges = ranges
-17
-        self.gaussian_blur_kernel = (7, 7)
-18
-        self.image_width = 300
-19
-        self.Ki_memory = 5
-20
-        self.servo_angle = 20
-21
-        self.servo_limit = 0
-22
-        self.active = True
-23
-        self.I = 0
-24
-​
-25
-        self.Kp = 10
-26
-        self.Ki = 0.1
-27
-        self.Kd = 0
-28
-        self.detections = []
-29
-        self.pastInputs = []
-30
-        self.videoLoop()
-31
-​
-32
-    def start(self):
-33
-        Thread(target=self.videoLoop(),args=()).start()
-34
-        return self
-35
-​
-36
-​
-37
-    def stop(self):
-38
-        self.active = False
-39
-​
-40
-    def videoLoop(self):
-41
-        while self.active:
-42
-            # grab the current frame
-43
-            frame = self.vs.read()
-44
-            frame = cv2.resize(frame,(240,135))
-45
-            if frame is None:
-​
-37
-    def stop(self):
-38
-        self.active = False
-39
-​
-40
-    def videoLoop(self):
-41
-        while self.active:
-42
-            # grab the current frame
-43
-            frame = self.vs.read()
-44
-            frame = cv2.resize(frame,(240,135))
-45
-            if frame is None:
-​
-9
-class computerVision:
-10
-​
-11
-    def __init__(self, ranges):
-12
-        self.vs = VideoStream(0)
-13
-        self.vs.start()
-14
-        time.sleep(1.0)
-15
-        self.minimum_countour_area = 300
-16
-        self.ranges = ranges
-17
-        self.gaussian_blur_kernel = (7, 7)
-18
-        self.image_width = 300
-19
-        self.Ki_memory = 5
-20
-        self.servo_angle = 20
-21
-        self.servo_limit = 0
-22
-        self.active = True
-23
-        self.I = 0
-24
-​
-25
-        self.Kp = 10
-26
-        self.Ki = 0.1
-27
-        self.Kd = 0
-28
-        self.detections = []
-29
-        self.pastInputs = []
-30
-        self.videoLoop()
-31
-​
-32
-    def start(self):
-33
-        Thread(target=self.videoLoop(),args=()).start()
-34
-        return self
-35
-​
-36
-​
-37
-    def stop(self):
-38
-        self.active = False
-39
-​
-40
-    def videoLoop(self):
-41
-        while self.active:
-42
-            # grab the current frame
-43
-            frame = self.vs.read()
-44
-            frame = cv2.resize(frame,(240,135))
-45
-            if frame is None:
-36
-​
-37
-    def stop(self):
-38
-        self.active = False
-39
-​
-40
-    def videoLoop(self):
-41
-        while self.active:
-42
-            # grab the current frame
-43
-            frame = self.vs.read()
-44
-            frame = cv2.resize(frame,(240,135))
-45
-            if frame is None:
+       
         
     def serialSensor(self):
         ser = serial.Serial(self.portnum, 9600, timeout=1)
@@ -588,5 +249,16 @@ class computerVision:
                         continue
                         
                 
-                
+
+def IMU():
+    
+    i2c = board.I2C()
+    sensor = adafruit_bno055.BNO055_I2C(i2c)
+    
+    while True:
+        try:
+            imu=int(float(re.sub('[()]', '', str(sensor.euler)).split(',')[0]))
+            return imu
+        except:
+            print("Error Retrieving IMU Data")
 
