@@ -90,38 +90,52 @@ class computerVision:
 
     def control_logic(self):
         while self.active:
+            #gets position of the nearest ball
             nearest_ball_position = self.videoLoop()
+            #checks if there is no position - no ball found.
             detects_target = False if nearest_ball_position == None else True
+            #a test, ignore
             position = self.getPosition()
             print(position)
+            #sensor array holds all the sensor values
             #sensor_array = self.s1.serialSensor()
+            #a test ,ignore
             sensor_array = [111,111,111]
             #print(sensor_array)
+            #collision detected function proccesses the sensor array and outputs a boolean value based on
+            #if there is a collision or not
             if self.collisionDetected(sensor_array):
-                #logic for driwing back and turning away? waiting perhaps
+                #logic of the threat is on the left
                 if sensor_array[0]:
                     self.setPWM(1)
                     time.sleep(1)
+                    # to prevent banging againts wall it switches the direction of turning ( to be implemented better )
                     self.default_turn_left = not self.default_turn_left
+                #logic of the threat is on the right
                 elif sensor_array(1):
                     self.setPWM(0)
                     time.sleep(1)
+                     # to prevent banging againts wall it switches the direction of turning ( to be implemented better )
                     self.default_turn_left = not self.default_turn_left
+                #logic if the threat is straight ahead
                 elif sensor_array[2]:
                     #go backwards
                     print("going backwards")
+            #logic for no imminent collision
             else:
                 if not detects_target:
+                    #logic for not banging againts the wall
                     if self.default_turn_left:
                         self.setPWM(0.75)
                     else:
                         self.setPWM(0.75)
+                #if ball is found do PID
                 else:
                     if (nearest_ball_position[1] > 100):
                         self.setPWM(nearest_ball_position[0])
                     else:
                         print("grab ball")
-            
+    #proccesses sensor_array to give a bool value if there will be a collision        
     def collisionDetected(self,sensor_array):
         for value in sensor_array:
             if value == '':
@@ -129,14 +143,14 @@ class computerVision:
             if int(value) < self.collision_distance:
                 return True
         return False
-        
+    #uses IMU to find rotational position
     def getPosition(self):
         try:
             imu=int(float(re.sub('[()]', '', str(self.sensor.euler)).split(',')[0]))
             return imu
         except:
             return None
-        
+    #PID control as well as motor code ( in the future)    
     def setPWM(self,error):
         error -= 0.5
         correction = 0
@@ -193,7 +207,7 @@ class computerVision:
                     # cv2.circle(frame, (int(x), int(y)), int(radius),(0, 255, 255), 2)
                     cv2.circle(frame, center, 5, (0, 0, 255), -1)
         return frame
-
+    #adds detections to a list in the class, used for finding the nearest ball
     def addDetections(self, cnts):
         l = []
         if len(cnts) > 0:
